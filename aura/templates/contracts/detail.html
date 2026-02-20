@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ contract.contract_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{{ contract.contract_name }}</h2>
+  <a href="{{ url_for('contracts.edit_contract', contract_id=contract.id) }}" class="btn btn-secondary">Edit</a>
+</div>
+<div class="detail-card">
+  <p><strong>Client:</strong> {{ contract.client_name }}</p>
+  <p><strong>Start Date:</strong> {{ contract.start_date }}</p>
+  <p><strong>Total Value:</strong> ${{ "%.2f"|format(contract.total_value) }}</p>
+  <p><strong>Payment Term:</strong> {{ contract.payment_term_days }} days</p>
+</div>
+
+<div class="section-header">
+  <h3>Milestones</h3>
+  <a href="{{ url_for('milestones.new_milestone', contract_id=contract.id) }}" class="btn btn-primary">+ Add Milestone</a>
+</div>
+
+{% if contract.milestones %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Planned Delivery</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Due Date</th>
+      <th>Payment</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in contract.milestones %}
+    <tr class="{{ 'overdue' if m.is_overdue else '' }}">
+      <td>{{ m.name }}</td>
+      <td>{{ m.planned_delivery_date }}</td>
+      <td>${{ "%.2f"|format(m.payment_amount) }}</td>
+      <td>
+        {% if m.payment %}
+          <span class="badge badge-success">Paid</span>
+        {% elif m.is_overdue %}
+          <span class="badge badge-danger">Overdue ({{ m.overdue_days }}d)</span>
+        {% elif m.invoice_eligible %}
+          <span class="badge badge-warning">Invoice Eligible</span>
+        {% elif m.actual_delivery_date %}
+          <span class="badge badge-info">Delivered</span>
+        {% else %}
+          <span class="badge badge-secondary">Pending</span>
+        {% endif %}
+      </td>
+      <td>{{ m.due_date if m.due_date else '-' }}</td>
+      <td>{{ m.payment.received_date if m.payment else '-' }}</td>
+      <td>
+        <a href="{{ url_for('milestones.edit_milestone', milestone_id=m.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+        {% if not m.actual_delivery_date %}
+        <form method="post" action="{{ url_for('milestones.deliver_milestone', milestone_id=m.id) }}" style="display:inline">
+          <input type="hidden" name="actual_delivery_date" value="{{ today }}">
+          <button type="submit" class="btn btn-sm btn-info">Deliver Today</button>
+        </form>
+        {% endif %}
+        {% if m.invoice_eligible and not m.payment %}
+        <form method="post" action="{{ url_for('milestones.record_payment', milestone_id=m.id) }}" style="display:inline">
+          <input type="hidden" name="received_date" value="{{ today }}">
+          <input type="hidden" name="amount_received" value="{{ m.payment_amount }}">
+          <button type="submit" class="btn btn-sm btn-success">Record Payment</button>
+        </form>
+        {% endif %}
+        {% if m.actual_delivery_date %}
+        <a href="{{ url_for('pdf.generate_pdf', milestone_id=m.id) }}" class="btn btn-sm btn-outline">PDF</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('milestones.delete_milestone', milestone_id=m.id) }}" style="display:inline" onsubmit="return confirm('Delete milestone?')">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No milestones yet. <a href="{{ url_for('milestones.new_milestone', contract_id=contract.id) }}">Add one</a>.</p>
+{% endif %}
+{% endblock %}

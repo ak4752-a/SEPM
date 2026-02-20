@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+<div class="cards">
+  <div class="card card-success">
+    <div class="card-title">Total Received</div>
+    <div class="card-value">${{ "%.2f"|format(total_received) }}</div>
+  </div>
+  <div class="card card-warning">
+    <div class="card-title">Total Pending</div>
+    <div class="card-value">${{ "%.2f"|format(total_pending) }}</div>
+  </div>
+  <div class="card card-danger">
+    <div class="card-title">Total Overdue</div>
+    <div class="card-value">${{ "%.2f"|format(total_overdue) }}</div>
+  </div>
+</div>
+
+<h3>Contract Breakdown</h3>
+{% if contract_breakdown %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Contract</th>
+      <th>Client</th>
+      <th>Received</th>
+      <th>Pending</th>
+      <th>Overdue</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in contract_breakdown %}
+    <tr>
+      <td><a href="{{ url_for('contracts.view_contract', contract_id=item.contract.id) }}">{{ item.contract.contract_name }}</a></td>
+      <td>{{ item.contract.client_name }}</td>
+      <td>${{ "%.2f"|format(item.received) }}</td>
+      <td>${{ "%.2f"|format(item.pending) }}</td>
+      <td class="{{ 'overdue' if item.overdue > 0 else '' }}">${{ "%.2f"|format(item.overdue) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No contracts yet. <a href="{{ url_for('contracts.new_contract') }}">Create one</a>.</p>
+{% endif %}
+{% endblock %}
