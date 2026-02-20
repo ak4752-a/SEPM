@@ -19,16 +19,13 @@ def index():
         .filter(Contract.user_id == user_id)\
         .scalar() or 0.0
 
-    # Total pending: invoice_eligible=True and no payment
-    paid_milestone_ids = db.session.query(Payment.milestone_id)\
-        .join(Milestone, Payment.milestone_id == Milestone.id)\
-        .join(Contract, Milestone.contract_id == Contract.id)\
-        .filter(Contract.user_id == user_id)
+    # Total pending: invoice_eligible=True and no payment (LEFT JOIN for efficiency)
     total_pending = db.session.query(func.sum(Milestone.payment_amount))\
         .join(Contract, Milestone.contract_id == Contract.id)\
+        .outerjoin(Payment, Payment.milestone_id == Milestone.id)\
         .filter(Contract.user_id == user_id)\
         .filter(Milestone.invoice_eligible.is_(True))\
-        .filter(Milestone.id.notin_(paid_milestone_ids))\
+        .filter(Payment.id.is_(None))\
         .scalar() or 0.0
 
     # Contracts with breakdown

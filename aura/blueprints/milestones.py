@@ -6,29 +6,36 @@ from .auth import login_required
 
 milestones_bp = Blueprint('milestones', __name__)
 
+
+def _validate_milestone_form(form):
+    """Validate and parse milestone form fields. Returns (errors, name, planned_delivery_date, payment_amount)."""
+    name = form.get('name', '').strip()
+    planned_delivery_date_str = form.get('planned_delivery_date', '')
+    payment_amount_str = form.get('payment_amount', '')
+    errors = []
+    if not name:
+        errors.append('Milestone name is required.')
+    try:
+        planned_delivery_date = date.fromisoformat(planned_delivery_date_str)
+    except ValueError:
+        errors.append('Invalid planned delivery date.')
+        planned_delivery_date = None
+    try:
+        payment_amount = float(payment_amount_str)
+        if payment_amount <= 0:
+            errors.append('Payment amount must be positive.')
+    except ValueError:
+        errors.append('Payment amount must be a number.')
+        payment_amount = None
+    return errors, name, planned_delivery_date, payment_amount
+
+
 @milestones_bp.route('/contracts/<int:contract_id>/milestones/new', methods=['GET', 'POST'])
 @login_required
 def new_milestone(contract_id):
     contract = Contract.query.filter_by(id=contract_id, user_id=session['user_id']).first_or_404()
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        planned_delivery_date_str = request.form.get('planned_delivery_date', '')
-        payment_amount_str = request.form.get('payment_amount', '')
-        errors = []
-        if not name:
-            errors.append('Milestone name is required.')
-        try:
-            planned_delivery_date = date.fromisoformat(planned_delivery_date_str)
-        except ValueError:
-            errors.append('Invalid planned delivery date.')
-            planned_delivery_date = None
-        try:
-            payment_amount = float(payment_amount_str)
-            if payment_amount <= 0:
-                errors.append('Payment amount must be positive.')
-        except ValueError:
-            errors.append('Payment amount must be a number.')
-            payment_amount = None
+        errors, name, planned_delivery_date, payment_amount = _validate_milestone_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')
@@ -54,24 +61,7 @@ def edit_milestone(milestone_id):
     ).first_or_404()
     contract = milestone.contract
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        planned_delivery_date_str = request.form.get('planned_delivery_date', '')
-        payment_amount_str = request.form.get('payment_amount', '')
-        errors = []
-        if not name:
-            errors.append('Milestone name is required.')
-        try:
-            planned_delivery_date = date.fromisoformat(planned_delivery_date_str)
-        except ValueError:
-            errors.append('Invalid planned delivery date.')
-            planned_delivery_date = None
-        try:
-            payment_amount = float(payment_amount_str)
-            if payment_amount <= 0:
-                errors.append('Payment amount must be positive.')
-        except ValueError:
-            errors.append('Payment amount must be a number.')
-            payment_amount = None
+        errors, name, planned_delivery_date, payment_amount = _validate_milestone_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')

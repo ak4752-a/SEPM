@@ -24,7 +24,7 @@ AURA is a self-hosted Flask web application for freelancers and small agencies t
 
 ```bash
 git clone <repo-url>
-cd SEPM
+cd <repo-name>
 pip install -r requirements.txt
 ```
 
