@@ -29,7 +29,26 @@ def create_app(config_name='default'):
 
     register_cli(app)
 
-    with app.app_context():
-        db.create_all()
+  with app.app_context():
+    db.create_all()
+
+    # Auto-create admin user in fresh deployments
+    from .models import User
+    import hashlib
+    from sqlalchemy import select
+
+    admin_username = os.environ.get("ADMIN_USERNAME")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+
+    if admin_username and admin_password:
+        existing = db.session.execute(
+            select(User).where(User.username == admin_username)
+        ).scalar_one_or_none()
+
+        if not existing:
+            hashed = hashlib.sha256(admin_password.encode()).hexdigest()
+            admin = User(username=admin_username, password_hash=hashed)
+            db.session.add(admin)
+            db.session.commit()
 
     return app
