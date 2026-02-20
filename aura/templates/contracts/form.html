@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{% if contract %}Edit Contract{% else %}New Contract{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if contract %}Edit Contract{% else %}New Contract{% endif %}</h2>
+</div>
+<form method="post" class="form-card">
+  <div class="form-group">
+    <label for="client_name">Client Name</label>
+    <input type="text" id="client_name" name="client_name" class="form-control"
+           value="{{ contract.client_name if contract else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="contract_name">Contract Name</label>
+    <input type="text" id="contract_name" name="contract_name" class="form-control"
+           value="{{ contract.contract_name if contract else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="start_date">Start Date</label>
+    <input type="date" id="start_date" name="start_date" class="form-control"
+           value="{{ contract.start_date if contract else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="total_value">Total Value ($)</label>
+    <input type="number" id="total_value" name="total_value" class="form-control"
+           step="0.01" min="0.01" value="{{ contract.total_value if contract else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="payment_term_days">Payment Term (days)</label>
+    <input type="number" id="payment_term_days" name="payment_term_days" class="form-control"
+           min="1" value="{{ contract.payment_term_days if contract else 30 }}" required>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">{% if contract %}Update{% else %}Create{% endif %}</button>
+    <a href="{{ url_for('contracts.list_contracts') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

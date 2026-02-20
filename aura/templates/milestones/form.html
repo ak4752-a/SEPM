@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{% if milestone %}Edit Milestone{% else %}New Milestone{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if milestone %}Edit Milestone{% else %}New Milestone{% endif %}</h2>
+  <p>Contract: {{ contract.contract_name }}</p>
+</div>
+<form method="post" class="form-card">
+  <div class="form-group">
+    <label for="name">Milestone Name</label>
+    <input type="text" id="name" name="name" class="form-control"
+           value="{{ milestone.name if milestone else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="planned_delivery_date">Planned Delivery Date</label>
+    <input type="date" id="planned_delivery_date" name="planned_delivery_date" class="form-control"
+           value="{{ milestone.planned_delivery_date if milestone else '' }}" required>
+  </div>
+  <div class="form-group">
+    <label for="payment_amount">Payment Amount ($)</label>
+    <input type="number" id="payment_amount" name="payment_amount" class="form-control"
+           step="0.01" min="0.01" value="{{ milestone.payment_amount if milestone else '' }}" required>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">{% if milestone %}Update{% else %}Add{% endif %}</button>
+    <a href="{{ url_for('contracts.view_contract', contract_id=contract.id) }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

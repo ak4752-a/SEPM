@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Contracts{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Contracts</h2>
+  <a href="{{ url_for('contracts.new_contract') }}" class="btn btn-primary">+ New Contract</a>
+</div>
+{% if contracts %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Contract Name</th>
+      <th>Client</th>
+      <th>Start Date</th>
+      <th>Total Value</th>
+      <th>Payment Term</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in contracts %}
+    <tr>
+      <td><a href="{{ url_for('contracts.view_contract', contract_id=c.id) }}">{{ c.contract_name }}</a></td>
+      <td>{{ c.client_name }}</td>
+      <td>{{ c.start_date }}</td>
+      <td>${{ "%.2f"|format(c.total_value) }}</td>
+      <td>{{ c.payment_term_days }} days</td>
+      <td>
+        <a href="{{ url_for('contracts.edit_contract', contract_id=c.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+        <form method="post" action="{{ url_for('contracts.delete_contract', contract_id=c.id) }}" style="display:inline" onsubmit="return confirm('Delete this contract?')">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No contracts yet. <a href="{{ url_for('contracts.new_contract') }}">Create one</a>.</p>
+{% endif %}
+{% endblock %}
