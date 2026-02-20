@@ -2,9 +2,15 @@ from flask import Flask
 from .extensions import db
 from config import config_map
 from .cli import register_cli
+import os   # 👈 ADD THIS
 
 def create_app(config_name='default'):
-    app = Flask(__name__)
+    # 👇 IMPORTANT: enable instance folder
+    app = Flask(__name__, instance_relative_config=True)
+
+    # 👇 VERY IMPORTANT for Render + SQLite
+    os.makedirs(app.instance_path, exist_ok=True)
+
     app.config.from_object(config_map[config_name])
 
     db.init_app(app)
