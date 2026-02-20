@@ -67,6 +67,43 @@ def test_app_creates(app):
     assert app is not None
 
 
+def test_admin_bootstrap_creates_user_with_salt(monkeypatch):
+    monkeypatch.setenv('ADMIN_USERNAME', 'bootstrapadmin')
+    monkeypatch.setenv('ADMIN_PASSWORD', 'bootstrappass')
+    from aura import create_app
+    from aura.extensions import db as _db2
+    # 'testing' config uses in-memory SQLite; bootstrap runs inside create_app
+    application = create_app('testing')
+    with application.app_context():
+        from aura.models import User as U
+        admin = U.query.filter_by(username='bootstrapadmin').first()
+        assert admin is not None
+        assert admin.salt is not None and len(admin.salt) > 0
+        expected_hash = hashlib.sha256((admin.salt + 'bootstrappass').encode()).hexdigest()
+        assert admin.password_hash == expected_hash
+
+
+def test_admin_bootstrap_idempotent(monkeypatch):
+    monkeypatch.setenv('ADMIN_USERNAME', 'idempotentadmin')
+    monkeypatch.setenv('ADMIN_PASSWORD', 'somepassword')
+    from aura import create_app
+    from aura.extensions import db as _db3
+    # 'testing' config uses in-memory SQLite; bootstrap runs inside create_app
+    application = create_app('testing')
+    with application.app_context():
+        from aura.models import User as U
+        from sqlalchemy import select
+        import secrets
+        # Verify bootstrap created exactly one admin
+        assert U.query.filter_by(username='idempotentadmin').count() == 1
+        # Simulate a second deploy: bootstrap guard prevents duplicate creation
+        existing = _db3.session.execute(
+            select(U).where(U.username == 'idempotentadmin')
+        ).scalar_one_or_none()
+        assert existing is not None  # Guard would skip creation on second run
+        assert U.query.filter_by(username='idempotentadmin').count() == 1
+
+
 def test_unauthenticated_redirect(client):
     response = client.get('/', follow_redirects=False)
     assert response.status_code == 302

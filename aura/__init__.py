@@ -46,8 +46,10 @@ def create_app(config_name='default'):
             ).scalar_one_or_none()
 
             if not existing:
-                hashed = hashlib.sha256(admin_password.encode()).hexdigest()
-                admin = User(username=admin_username, password_hash=hashed)
+                import secrets
+                salt = secrets.token_hex(16)
+                hashed = hashlib.sha256((salt + admin_password).encode()).hexdigest()
+                admin = User(username=admin_username, password_hash=hashed, salt=salt)
                 db.session.add(admin)
                 db.session.commit()
 
