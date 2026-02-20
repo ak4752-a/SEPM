@@ -1,7 +1,5 @@
 import os
 from aura import create_app
 
-app = create_app(os.environ.get('FLASK_ENV', 'default'))
-
-if __name__ == '__main__':
-    app.run()
+# Render / Gunicorn entry point
+app = create_app(os.environ.get("FLASK_ENV", "production"))
