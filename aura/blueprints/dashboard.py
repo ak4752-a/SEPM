@@ -20,7 +20,10 @@ def index():
         .scalar() or 0.0
 
     # Total pending: invoice_eligible=True and no payment
-    paid_milestone_ids = db.session.query(Payment.milestone_id)
+    paid_milestone_ids = db.session.query(Payment.milestone_id)\
+        .join(Milestone, Payment.milestone_id == Milestone.id)\
+        .join(Contract, Milestone.contract_id == Contract.id)\
+        .filter(Contract.user_id == user_id)
     total_pending = db.session.query(func.sum(Milestone.payment_amount))\
         .join(Contract, Milestone.contract_id == Contract.id)\
         .filter(Contract.user_id == user_id)\
