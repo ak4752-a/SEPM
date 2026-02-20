@@ -2,13 +2,13 @@ from flask import Flask
 from .extensions import db
 from config import config_map
 from .cli import register_cli
-import os   # 👈 ADD THIS
+import os
 
 def create_app(config_name='default'):
-    # 👇 IMPORTANT: enable instance folder
+    # IMPORTANT: enable instance folder
     app = Flask(__name__, instance_relative_config=True)
 
-    # 👇 VERY IMPORTANT for Render + SQLite
+    # VERY IMPORTANT for Render + SQLite
     os.makedirs(app.instance_path, exist_ok=True)
 
     app.config.from_object(config_map[config_name])
@@ -29,26 +29,26 @@ def create_app(config_name='default'):
 
     register_cli(app)
 
-  with app.app_context():
-    db.create_all()
+    with app.app_context():
+        db.create_all()
 
-    # Auto-create admin user in fresh deployments
-    from .models import User
-    import hashlib
-    from sqlalchemy import select
+        # Auto-create admin user in fresh deployments
+        from .models import User
+        import hashlib
+        from sqlalchemy import select
 
-    admin_username = os.environ.get("ADMIN_USERNAME")
-    admin_password = os.environ.get("ADMIN_PASSWORD")
+        admin_username = os.environ.get("ADMIN_USERNAME")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
 
-    if admin_username and admin_password:
-        existing = db.session.execute(
-            select(User).where(User.username == admin_username)
-        ).scalar_one_or_none()
+        if admin_username and admin_password:
+            existing = db.session.execute(
+                select(User).where(User.username == admin_username)
+            ).scalar_one_or_none()
 
-        if not existing:
-            hashed = hashlib.sha256(admin_password.encode()).hexdigest()
-            admin = User(username=admin_username, password_hash=hashed)
-            db.session.add(admin)
-            db.session.commit()
+            if not existing:
+                hashed = hashlib.sha256(admin_password.encode()).hexdigest()
+                admin = User(username=admin_username, password_hash=hashed)
+                db.session.add(admin)
+                db.session.commit()
 
     return app
