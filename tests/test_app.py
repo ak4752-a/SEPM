@@ -398,3 +398,115 @@ def test_money_format():
     assert format_amount(1000.0, 'INR') == '₹1,000.00'
     assert format_amount(1000.0, 'USD') == '$1,000.00'
     assert format_amount(0.5, 'INR') == '₹0.50'
+
+
+def test_deliver_with_past_date(app, auth_client, contract):
+    """Delivering a milestone with a past date (but >= contract start) persists correctly."""
+    with app.app_context():
+        m = Milestone(
+            contract_id=contract,
+            name='Past Delivery',
+            planned_delivery_date=date(2024, 2, 1),
+            payment_amount=500.0,
+        )
+        _db.session.add(m)
+        _db.session.commit()
+        mid = m.id
+
+    past_date = '2024-02-15'
+    response = auth_client.post(f'/milestones/{mid}/deliver', data={
+        'actual_delivery_date': past_date,
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    with app.app_context():
+        m = _db.session.get(Milestone, mid)
+        assert m.actual_delivery_date == date(2024, 2, 15)
+        assert m.invoice_eligible is True
+
+
+def test_deliver_before_contract_start_rejected(app, auth_client, contract):
+    """Delivering with a date before contract start_date should flash an error."""
+    with app.app_context():
+        m = Milestone(
+            contract_id=contract,
+            name='Early Delivery',
+            planned_delivery_date=date(2024, 2, 1),
+            payment_amount=500.0,
+        )
+        _db.session.add(m)
+        _db.session.commit()
+        mid = m.id
+
+    # contract start_date is 2024-01-01; submit 2023-12-31
+    response = auth_client.post(f'/milestones/{mid}/deliver', data={
+        'actual_delivery_date': '2023-12-31',
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    assert b'start date' in response.data
+    with app.app_context():
+        m = _db.session.get(Milestone, mid)
+        assert m.actual_delivery_date is None
+
+
+def test_contract_detail_pdf_links(app, auth_client, user):
+    """Contract detail page shows correct PDF links based on milestone state."""
+    with app.app_context():
+        c = Contract(
+            user_id=user,
+            client_name='PDF Rules Client',
+            contract_name='PDF Rules Contract',
+            start_date=date(2024, 1, 1),
+            total_value=5000.0,
+            payment_term_days=30,
+        )
+        _db.session.add(c)
+        _db.session.commit()
+        cid = c.id
+
+        # Milestone 1: delivered recently, not overdue
+        m1 = Milestone(
+            contract_id=cid,
+            name='Recent Delivery',
+            planned_delivery_date=date.today(),
+            payment_amount=1000.0,
+            actual_delivery_date=date.today(),
+            invoice_eligible=True,
+        )
+        # Milestone 2: overdue, unpaid, penalty enabled
+        past = date.today() - timedelta(days=60)
+        m2 = Milestone(
+            contract_id=cid,
+            name='Overdue Penalty',
+            planned_delivery_date=past,
+            payment_amount=2000.0,
+            actual_delivery_date=past,
+            invoice_eligible=True,
+            penalty_enabled=True,
+            penalty_rate_percent=1.0,
+            penalty_unit='day',
+        )
+        # Milestone 3: overdue, unpaid, no penalty
+        m3 = Milestone(
+            contract_id=cid,
+            name='Overdue No Penalty',
+            planned_delivery_date=past,
+            payment_amount=1500.0,
+            actual_delivery_date=past,
+            invoice_eligible=True,
+            penalty_enabled=False,
+        )
+        _db.session.add_all([m1, m2, m3])
+        _db.session.commit()
+
+    response = auth_client.get(f'/contracts/{cid}')
+    assert response.status_code == 200
+    html = response.data.decode()
+
+    # Normal PDF link should appear for all delivered milestones
+    assert 'mode=normal' in html
+
+    # Overdue PDF link only for overdue+unpaid milestones (m2 and m3)
+    assert 'mode=overdue' in html
+
+    # Penalty PDF link only for m2 (overdue+unpaid+penalty_enabled)
+    assert 'mode=penalty' in html

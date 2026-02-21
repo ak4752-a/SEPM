@@ -7,10 +7,11 @@ AURA is a self-hosted Flask web application for freelancers and small agencies t
 - **Contract Management** — Create, edit, and delete client contracts with payment terms
 - **Milestone Tracking** — Break contracts into milestones with planned delivery dates and payment amounts
 - **Invoice Eligibility** — Automatically mark milestones invoice-eligible when delivered
+- **Delivery Date** — Record actual delivery with any date (including past dates); defaults to today for convenience
 - **Overdue Detection** — Automatically highlights overdue payments based on delivery date + payment terms
 - **Payment Recording** — Record when payments are received
 - **Dashboard** — Summary cards with total received, pending, and overdue amounts
-- **PDF Reminders** — Generate professional payment reminder PDFs per milestone
+- **PDF Reminders** — Generate professional payment reminder PDFs per milestone (Normal, Overdue, Penalty modes)
 - **Single-user** — Secure SHA-256 password hashing with per-user salt
 
 ## Setup
@@ -102,3 +103,17 @@ aura/
 - **Contract** → has many **Milestones** (with payment_term_days)
 - **Milestone** → has one optional **Payment**
 - Overdue = `actual_delivery_date + payment_term_days < today` and no payment recorded
+
+## Delivery Flow
+
+On the contract detail page, each undelivered milestone shows a date input (defaulting to today) and a **Deliver** button. You can set any date on or after the contract start date, including past dates.
+
+## PDF Modes
+
+PDF generation buttons appear in the milestone table according to these rules:
+
+| Mode | When available |
+|---|---|
+| **Normal / Quotation** | Milestone is delivered (`actual_delivery_date` is set) |
+| **Overdue** | Milestone is overdue (`due_date < today`) **and** unpaid |
+| **Penalty** | Milestone is overdue **and** unpaid **and** penalty is enabled |
