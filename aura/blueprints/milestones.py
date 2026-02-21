@@ -106,6 +106,12 @@ def deliver_milestone(milestone_id):
     except ValueError:
         flash('Invalid delivery date.', 'danger')
         return redirect(url_for('contracts.view_contract', contract_id=milestone.contract_id))
+    if actual_delivery_date < milestone.contract.start_date:
+        flash('Delivery date cannot be earlier than the contract start date.', 'danger')
+        return redirect(url_for('contracts.view_contract', contract_id=milestone.contract_id))
+    if actual_delivery_date > date.today():
+        flash('Delivery date cannot be in the future.', 'danger')
+        return redirect(url_for('contracts.view_contract', contract_id=milestone.contract_id))
     milestone.actual_delivery_date = actual_delivery_date
     milestone.invoice_eligible = True
     db.session.commit()
