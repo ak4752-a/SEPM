@@ -8,10 +8,13 @@ milestones_bp = Blueprint('milestones', __name__)
 
 
 def _validate_milestone_form(form):
-    """Validate and parse milestone form fields. Returns (errors, name, planned_delivery_date, payment_amount)."""
+    """Validate and parse milestone form fields. Returns (errors, name, planned_delivery_date, payment_amount, penalty_enabled, penalty_rate_percent, penalty_unit)."""
     name = form.get('name', '').strip()
     planned_delivery_date_str = form.get('planned_delivery_date', '')
     payment_amount_str = form.get('payment_amount', '')
+    penalty_enabled = bool(form.get('penalty_enabled'))
+    penalty_unit = form.get('penalty_unit', 'day').strip()
+    penalty_rate_str = form.get('penalty_rate_percent', '0')
     errors = []
     if not name:
         errors.append('Milestone name is required.')
@@ -27,7 +30,17 @@ def _validate_milestone_form(form):
     except ValueError:
         errors.append('Payment amount must be a number.')
         payment_amount = None
-    return errors, name, planned_delivery_date, payment_amount
+    try:
+        penalty_rate_percent = float(penalty_rate_str)
+        if penalty_rate_percent < 0:
+            errors.append('Penalty rate must be non-negative.')
+    except ValueError:
+        errors.append('Penalty rate must be a number.')
+        penalty_rate_percent = 0.0
+    if penalty_unit not in ('day', 'month'):
+        errors.append('Penalty unit must be "day" or "month".')
+        penalty_unit = 'day'
+    return errors, name, planned_delivery_date, payment_amount, penalty_enabled, penalty_rate_percent, penalty_unit
 
 
 @milestones_bp.route('/contracts/<int:contract_id>/milestones/new', methods=['GET', 'POST'])
@@ -35,7 +48,7 @@ def _validate_milestone_form(form):
 def new_milestone(contract_id):
     contract = Contract.query.filter_by(id=contract_id, user_id=session['user_id']).first_or_404()
     if request.method == 'POST':
-        errors, name, planned_delivery_date, payment_amount = _validate_milestone_form(request.form)
+        errors, name, planned_delivery_date, payment_amount, penalty_enabled, penalty_rate_percent, penalty_unit = _validate_milestone_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')
@@ -45,6 +58,9 @@ def new_milestone(contract_id):
                 name=name,
                 planned_delivery_date=planned_delivery_date,
                 payment_amount=payment_amount,
+                penalty_enabled=penalty_enabled,
+                penalty_rate_percent=penalty_rate_percent,
+                penalty_unit=penalty_unit,
             )
             db.session.add(milestone)
             db.session.commit()
@@ -61,7 +77,7 @@ def edit_milestone(milestone_id):
     ).first_or_404()
     contract = milestone.contract
     if request.method == 'POST':
-        errors, name, planned_delivery_date, payment_amount = _validate_milestone_form(request.form)
+        errors, name, planned_delivery_date, payment_amount, penalty_enabled, penalty_rate_percent, penalty_unit = _validate_milestone_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')
@@ -69,6 +85,9 @@ def edit_milestone(milestone_id):
             milestone.name = name
             milestone.planned_delivery_date = planned_delivery_date
             milestone.payment_amount = payment_amount
+            milestone.penalty_enabled = penalty_enabled
+            milestone.penalty_rate_percent = penalty_rate_percent
+            milestone.penalty_unit = penalty_unit
             db.session.commit()
             flash('Milestone updated.', 'success')
             return redirect(url_for('contracts.view_contract', contract_id=contract.id))

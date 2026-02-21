@@ -8,7 +8,8 @@
 <div class="detail-card">
   <p><strong>Client:</strong> {{ contract.client_name }}</p>
   <p><strong>Start Date:</strong> {{ contract.start_date }}</p>
-  <p><strong>Total Value:</strong> ${{ "%.2f"|format(contract.total_value) }}</p>
+  <p><strong>Currency:</strong> {{ contract.currency }}</p>
+  <p><strong>Total Value:</strong> {{ format_amount(contract.total_value, contract.currency) }}</p>
   <p><strong>Payment Term:</strong> {{ contract.payment_term_days }} days</p>
 </div>
 
@@ -35,7 +36,7 @@
     <tr class="{{ 'overdue' if m.is_overdue else '' }}">
       <td>{{ m.name }}</td>
       <td>{{ m.planned_delivery_date }}</td>
-      <td>${{ "%.2f"|format(m.payment_amount) }}</td>
+      <td>{{ format_amount(m.payment_amount, contract.currency) }}</td>
       <td>
         {% if m.payment %}
           <span class="badge badge-success">Paid</span>
@@ -67,7 +68,13 @@
         </form>
         {% endif %}
         {% if m.actual_delivery_date %}
-        <a href="{{ url_for('pdf.generate_pdf', milestone_id=m.id) }}" class="btn btn-sm btn-outline">PDF</a>
+        <div class="pdf-actions" style="display:inline">
+          <a href="{{ url_for('pdf.generate_pdf', milestone_id=m.id, mode='normal') }}" class="btn btn-sm btn-outline">PDF (Normal)</a>
+          <a href="{{ url_for('pdf.generate_pdf', milestone_id=m.id, mode='overdue') }}" class="btn btn-sm btn-outline">PDF (Overdue)</a>
+          {% if m.penalty_enabled %}
+          <a href="{{ url_for('pdf.generate_pdf', milestone_id=m.id, mode='penalty') }}" class="btn btn-sm btn-outline">PDF (Penalty)</a>
+          {% endif %}
+        </div>
         {% endif %}
         <form method="post" action="{{ url_for('milestones.delete_milestone', milestone_id=m.id) }}" style="display:inline" onsubmit="return confirm('Delete milestone?')">
           <button type="submit" class="btn btn-sm btn-danger">Delete</button>

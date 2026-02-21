@@ -1,19 +1,20 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from ..extensions import db
-from ..models import Contract
+from ..models import Contract, ALLOWED_CURRENCIES
 from .auth import login_required
 
 contracts_bp = Blueprint('contracts', __name__)
 
 
 def _validate_contract_form(form):
-    """Validate and parse contract form fields. Returns (errors, client_name, contract_name, start_date, total_value, payment_term_days)."""
+    """Validate and parse contract form fields. Returns (errors, client_name, contract_name, start_date, total_value, payment_term_days, currency)."""
     client_name = form.get('client_name', '').strip()
     contract_name = form.get('contract_name', '').strip()
     start_date_str = form.get('start_date', '')
     total_value_str = form.get('total_value', '')
     payment_term_days_str = form.get('payment_term_days', '30')
+    currency = form.get('currency', 'INR').strip().upper()
     errors = []
     if not client_name:
         errors.append('Client name is required.')
@@ -38,7 +39,10 @@ def _validate_contract_form(form):
     except ValueError:
         errors.append('Payment term must be an integer.')
         payment_term_days = 30
-    return errors, client_name, contract_name, start_date, total_value, payment_term_days
+    if currency not in ALLOWED_CURRENCIES:
+        errors.append(f'Currency must be one of: {", ".join(ALLOWED_CURRENCIES)}.')
+        currency = 'INR'
+    return errors, client_name, contract_name, start_date, total_value, payment_term_days, currency
 
 
 @contracts_bp.route('/contracts')
@@ -52,7 +56,7 @@ def list_contracts():
 @login_required
 def new_contract():
     if request.method == 'POST':
-        errors, client_name, contract_name, start_date, total_value, payment_term_days = _validate_contract_form(request.form)
+        errors, client_name, contract_name, start_date, total_value, payment_term_days, currency = _validate_contract_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')
@@ -64,19 +68,20 @@ def new_contract():
                 start_date=start_date,
                 total_value=total_value,
                 payment_term_days=payment_term_days,
+                currency=currency,
             )
             db.session.add(contract)
             db.session.commit()
             flash('Contract created.', 'success')
             return redirect(url_for('contracts.list_contracts'))
-    return render_template('contracts/form.html', contract=None)
+    return render_template('contracts/form.html', contract=None, allowed_currencies=ALLOWED_CURRENCIES)
 
 @contracts_bp.route('/contracts/<int:contract_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_contract(contract_id):
     contract = Contract.query.filter_by(id=contract_id, user_id=session['user_id']).first_or_404()
     if request.method == 'POST':
-        errors, client_name, contract_name, start_date, total_value, payment_term_days = _validate_contract_form(request.form)
+        errors, client_name, contract_name, start_date, total_value, payment_term_days, currency = _validate_contract_form(request.form)
         if errors:
             for e in errors:
                 flash(e, 'danger')
@@ -86,10 +91,11 @@ def edit_contract(contract_id):
             contract.start_date = start_date
             contract.total_value = total_value
             contract.payment_term_days = payment_term_days
+            contract.currency = currency
             db.session.commit()
             flash('Contract updated.', 'success')
             return redirect(url_for('contracts.view_contract', contract_id=contract.id))
-    return render_template('contracts/form.html', contract=contract)
+    return render_template('contracts/form.html', contract=contract, allowed_currencies=ALLOWED_CURRENCIES)
 
 @contracts_bp.route('/contracts/<int:contract_id>/delete', methods=['POST'])
 @login_required

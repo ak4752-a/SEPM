@@ -2,20 +2,28 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <h2>Dashboard</h2>
-<div class="cards">
-  <div class="card card-success">
-    <div class="card-title">Total Received</div>
-    <div class="card-value">${{ "%.2f"|format(total_received) }}</div>
+
+{% if currency_summary %}
+  {% for cs in currency_summary %}
+  <h4>{{ cs.currency }} Totals</h4>
+  <div class="cards">
+    <div class="card card-success">
+      <div class="card-title">Total Received</div>
+      <div class="card-value">{{ cs.received }}</div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-title">Total Pending</div>
+      <div class="card-value">{{ cs.pending }}</div>
+    </div>
+    <div class="card card-danger">
+      <div class="card-title">Total Overdue</div>
+      <div class="card-value">{{ cs.overdue }}</div>
+    </div>
   </div>
-  <div class="card card-warning">
-    <div class="card-title">Total Pending</div>
-    <div class="card-value">${{ "%.2f"|format(total_pending) }}</div>
-  </div>
-  <div class="card card-danger">
-    <div class="card-title">Total Overdue</div>
-    <div class="card-value">${{ "%.2f"|format(total_overdue) }}</div>
-  </div>
-</div>
+  {% endfor %}
+{% else %}
+<p>No contracts yet.</p>
+{% endif %}
 
 <h3>Contract Breakdown</h3>
 {% if contract_breakdown %}
@@ -24,6 +32,7 @@
     <tr>
       <th>Contract</th>
       <th>Client</th>
+      <th>Currency</th>
       <th>Received</th>
       <th>Pending</th>
       <th>Overdue</th>
@@ -34,9 +43,10 @@
     <tr>
       <td><a href="{{ url_for('contracts.view_contract', contract_id=item.contract.id) }}">{{ item.contract.contract_name }}</a></td>
       <td>{{ item.contract.client_name }}</td>
-      <td>${{ "%.2f"|format(item.received) }}</td>
-      <td>${{ "%.2f"|format(item.pending) }}</td>
-      <td class="{{ 'overdue' if item.overdue > 0 else '' }}">${{ "%.2f"|format(item.overdue) }}</td>
+      <td>{{ item.currency }}</td>
+      <td>{{ format_amount(item.received, item.currency) }}</td>
+      <td>{{ format_amount(item.pending, item.currency) }}</td>
+      <td class="{{ 'overdue' if item.overdue > 0 else '' }}">{{ format_amount(item.overdue, item.currency) }}</td>
     </tr>
     {% endfor %}
   </tbody>
