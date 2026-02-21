@@ -29,12 +29,15 @@ def create_app(config_name='default'):
 
     register_cli(app)
 
+    # Register template globals
+    from .utils.money import format_amount
+    app.jinja_env.globals['format_amount'] = format_amount
+
     with app.app_context():
         db.create_all()
 
         # Auto-create admin user in fresh deployments
         from .models import User
-        import hashlib
         from sqlalchemy import select
 
         admin_username = os.environ.get("ADMIN_USERNAME")
@@ -47,9 +50,11 @@ def create_app(config_name='default'):
 
             if not existing:
                 import secrets
+                from .blueprints.auth import _hash_password, _PBKDF2_ITERATIONS
                 salt = secrets.token_hex(16)
-                hashed = hashlib.sha256((salt + admin_password).encode()).hexdigest()
-                admin = User(username=admin_username, password_hash=hashed, salt=salt)
+                hashed = _hash_password(admin_password, salt, _PBKDF2_ITERATIONS)
+                admin = User(username=admin_username, password_hash=hashed, salt=salt,
+                             password_iterations=_PBKDF2_ITERATIONS)
                 db.session.add(admin)
                 db.session.commit()
 

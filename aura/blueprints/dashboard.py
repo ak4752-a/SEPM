@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, session
-from sqlalchemy import func
 from ..extensions import db
 from ..models import Contract, Milestone, Payment
 from .auth import login_required
+from ..utils.money import format_amount
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -12,50 +12,48 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def index():
     user_id = session['user_id']
 
-    # Total received: sum of payments for user's milestones
-    total_received = db.session.query(func.sum(Payment.amount_received))\
-        .join(Milestone, Payment.milestone_id == Milestone.id)\
-        .join(Contract, Milestone.contract_id == Contract.id)\
-        .filter(Contract.user_id == user_id)\
-        .scalar() or 0.0
-
-    # Total pending: invoice_eligible=True and no payment (LEFT JOIN for efficiency)
-    total_pending = db.session.query(func.sum(Milestone.payment_amount))\
-        .join(Contract, Milestone.contract_id == Contract.id)\
-        .outerjoin(Payment, Payment.milestone_id == Milestone.id)\
-        .filter(Contract.user_id == user_id)\
-        .filter(Milestone.invoice_eligible.is_(True))\
-        .filter(Payment.id.is_(None))\
-        .scalar() or 0.0
-
-    # Contracts with breakdown
     contracts = Contract.query.filter_by(user_id=user_id).order_by(Contract.created_at.desc()).all()
 
-    # Compute overdue total using Python (after loading)
-    total_overdue = 0.0
+    # Compute totals grouped by currency
+    currency_totals = {}  # currency -> {received, pending, overdue}
+
     contract_breakdown = []
     for c in contracts:
+        cur = c.currency or 'INR'
+        if cur not in currency_totals:
+            currency_totals[cur] = {'received': 0.0, 'pending': 0.0, 'overdue': 0.0}
         c_received = 0.0
         c_pending = 0.0
         c_overdue = 0.0
         for m in c.milestones:
             if m.payment:
                 c_received += m.payment.amount_received
+                currency_totals[cur]['received'] += m.payment.amount_received
             elif m.invoice_eligible:
                 c_pending += m.payment_amount
+                currency_totals[cur]['pending'] += m.payment_amount
                 if m.is_overdue:
                     c_overdue += m.payment_amount
+                    currency_totals[cur]['overdue'] += m.payment_amount
         contract_breakdown.append({
             'contract': c,
             'received': c_received,
             'pending': c_pending,
             'overdue': c_overdue,
+            'currency': cur,
         })
-        total_overdue += c_overdue
+
+    # Build formatted currency summary list
+    currency_summary = []
+    for cur, totals in sorted(currency_totals.items()):
+        currency_summary.append({
+            'currency': cur,
+            'received': format_amount(totals['received'], cur),
+            'pending': format_amount(totals['pending'], cur),
+            'overdue': format_amount(totals['overdue'], cur),
+        })
 
     return render_template('dashboard/index.html',
-        total_received=total_received,
-        total_pending=total_pending,
-        total_overdue=total_overdue,
+        currency_summary=currency_summary,
         contract_breakdown=contract_breakdown,
     )

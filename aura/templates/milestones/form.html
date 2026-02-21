@@ -17,10 +17,32 @@
            value="{{ milestone.planned_delivery_date if milestone else '' }}" required>
   </div>
   <div class="form-group">
-    <label for="payment_amount">Payment Amount ($)</label>
+    <label for="payment_amount">Payment Amount ({{ contract.currency }})</label>
     <input type="number" id="payment_amount" name="payment_amount" class="form-control"
            step="0.01" min="0.01" value="{{ milestone.payment_amount if milestone else '' }}" required>
   </div>
+  <fieldset class="form-group">
+    <legend>Penalty Settings</legend>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="penalty_enabled" value="1"
+               {% if milestone and milestone.penalty_enabled %}checked{% endif %}>
+        Enable Penalty
+      </label>
+    </div>
+    <div class="form-group">
+      <label for="penalty_rate_percent">Penalty Rate (%)</label>
+      <input type="number" id="penalty_rate_percent" name="penalty_rate_percent" class="form-control"
+             step="0.01" min="0" value="{{ milestone.penalty_rate_percent if milestone else '0' }}">
+    </div>
+    <div class="form-group">
+      <label for="penalty_unit">Penalty Unit</label>
+      <select id="penalty_unit" name="penalty_unit" class="form-control">
+        <option value="day" {% if not milestone or milestone.penalty_unit == 'day' %}selected{% endif %}>Per Day</option>
+        <option value="month" {% if milestone and milestone.penalty_unit == 'month' %}selected{% endif %}>Per Month (30-day block)</option>
+      </select>
+    </div>
+  </fieldset>
   <div class="form-actions">
     <button type="submit" class="btn btn-primary">{% if milestone %}Update{% else %}Add{% endif %}</button>
     <a href="{{ url_for('contracts.view_contract', contract_id=contract.id) }}" class="btn btn-secondary">Cancel</a>

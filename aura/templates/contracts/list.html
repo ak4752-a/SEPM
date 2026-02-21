@@ -12,6 +12,7 @@
       <th>Contract Name</th>
       <th>Client</th>
       <th>Start Date</th>
+      <th>Currency</th>
       <th>Total Value</th>
       <th>Payment Term</th>
       <th>Actions</th>
@@ -23,7 +24,8 @@
       <td><a href="{{ url_for('contracts.view_contract', contract_id=c.id) }}">{{ c.contract_name }}</a></td>
       <td>{{ c.client_name }}</td>
       <td>{{ c.start_date }}</td>
-      <td>${{ "%.2f"|format(c.total_value) }}</td>
+      <td>{{ c.currency }}</td>
+      <td>{{ format_amount(c.total_value, c.currency) }}</td>
       <td>{{ c.payment_term_days }} days</td>
       <td>
         <a href="{{ url_for('contracts.edit_contract', contract_id=c.id) }}" class="btn btn-sm btn-secondary">Edit</a>
