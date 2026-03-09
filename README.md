@@ -1,7 +1,6 @@
 # AURA (Automated User Revenue Assistant)
 
-AURA is a self hosted Flask web application for freelancers and small agencies to track contracts, milestones, invoicing, and payments in one place.
-
+AURA is a self hosted Flask web application for freelancers and small agencies to track client contracts, project milestones, invoices, and payments.
 ## Live Link (Render)
 
 [Open the app](https://aura-automated-user-revenue-assistant.onrender.com/login)
@@ -16,8 +15,7 @@ AURA is a self hosted Flask web application for freelancers and small agencies t
 - **Payment Recording** — Record when payments are received
 - **Dashboard** — Summary cards with total received, pending, and overdue amounts
 - **PDF Reminders** — Generate professional payment reminder PDFs per milestone (Normal, Overdue, Penalty modes)
-- **Single-user** — Secure SHA-256 password hashing with per-user salt
-
+- **Single-user** — authentication — Secure SHA-256 password hashing with per-user salt.
 ## Setup
 
 ### Prerequisites
@@ -28,8 +26,8 @@ AURA is a self hosted Flask web application for freelancers and small agencies t
 ### Install
 
 ```bash
-git clone <repo-url>
-cd <repo-name>
+git clone https://github.com/ak4752-a/SEPM.git
+cd SEPM
 pip install -r requirements.txt
 ```
 
