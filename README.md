@@ -1,4 +1,4 @@
-# AURA — Automated User Revenue Assistant
+# AURA (Automated User Revenue Assistant)
 
 AURA is a self-hosted Flask web application for freelancers and small agencies to track contracts, milestones, invoicing, and payments in one place.
 
