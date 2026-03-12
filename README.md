@@ -3,7 +3,7 @@
 AURA is a self hosted Flask web application for freelancers and small agencies to track client contracts, project milestones, invoices, and payments.
 ## Live Link (Render)
 
-[Open the app](https://aura-automated-user-revenue-assistant.onrender.com/login)
+[Open the app](https://aura-automated-user-revenue-assistant.onrender.com/)
 
 ## Features
 
