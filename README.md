@@ -59,6 +59,40 @@ FLASK_APP=run.py python -m pytest tests/ -v
 
 ## Production Deployment
 
+### Deploying to Render + Supabase Postgres
+
+#### 1. Create a Supabase project
+
+1. Sign in at [supabase.com](https://supabase.com) and create a new project.
+2. In the Supabase dashboard, go to **Project Settings → Database**.
+3. Under **Connection string**, copy the **Direct connection** URI.  
+   It looks like: `postgresql://postgres:PASSWORD@db.XXXX.supabase.co:5432/postgres`
+
+#### 2. Deploy on Render
+
+1. Connect your GitHub repo at [render.com](https://render.com) and create a **New Web Service**.
+2. Render will detect `render.yaml` and pre-fill the build/start commands.
+3. In **Environment → Environment Variables**, add:
+
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | Your Supabase direct connection string (from step 1) |
+   | `ADMIN_USERNAME` | Your admin username (e.g. `Aditya`) |
+   | `ADMIN_PASSWORD` | Your admin password (e.g. `Aditya321`) |
+
+   > `SECRET_KEY` and `HTTPS=true` are already set by `render.yaml`.
+
+4. Click **Deploy**. On the first boot, the app will:
+   - Create all database tables automatically (`db.create_all()`).
+   - Create the admin user from `ADMIN_USERNAME` / `ADMIN_PASSWORD` if it doesn't exist yet.
+5. Open the deployed URL and log in with your admin credentials.
+6. Redeploy once more (or create a contract + milestone) and confirm data persists across deploys — this proves Postgres is in use rather than the ephemeral SQLite fallback.
+
+#### 3. Post-deploy hardening (recommended)
+
+- After first login, **remove** the `ADMIN_PASSWORD` environment variable in Render to disable auto-bootstrap on subsequent deploys.
+- Rotate the `SECRET_KEY` and `DATABASE_URL` password if they were ever exposed.
+
 ### Using Gunicorn + Nginx
 
 ```bash
@@ -72,10 +106,12 @@ Configure Nginx to proxy to port 8000 and handle SSL termination.
 
 | Variable | Default | Description |
 |---|---|---|
-| `SECRET_KEY` | `dev-secret-change-in-production` | Flask session secret — **change in production** |
-| `DATABASE_URL` | `sqlite:///aura.db` | SQLAlchemy database URI |
-| `FLASK_ENV` | `default` | `development` or `production` |
-| `HTTPS` | `false` | Set to `true` to enable secure session cookies |
+| `SECRET_KEY` | `dev-secret-key` | Flask session secret — **change in production** |
+| `DATABASE_URL` | `sqlite:////tmp/aura.db` | SQLAlchemy database URI. Set to Supabase Postgres URL in production. |
+| `FLASK_ENV` | `default` (production) | `development` or `production` |
+| `HTTPS` | `false` | Set to `true` to enable `Secure` + `HttpOnly` session cookies (always set on Render) |
+| `ADMIN_USERNAME` | *(unset)* | If set together with `ADMIN_PASSWORD`, the app auto-creates this user on first boot |
+| `ADMIN_PASSWORD` | *(unset)* | Password for the auto-created admin user (remove after first deploy) |
 
 ### Security Notes
 

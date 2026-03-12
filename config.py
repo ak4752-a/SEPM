@@ -28,6 +28,8 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 
 config_map = {
