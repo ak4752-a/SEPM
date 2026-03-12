@@ -65,8 +65,17 @@ FLASK_APP=run.py python -m pytest tests/ -v
 
 1. Sign in at [supabase.com](https://supabase.com) and create a new project.
 2. In the Supabase dashboard, go to **Project Settings → Database**.
-3. Under **Connection string**, copy the **Direct connection** URI.  
+3. Under **Connection string**, copy the **URI** (direct connection).  
    It looks like: `postgresql://postgres:PASSWORD@db.XXXX.supabase.co:5432/postgres`
+
+   > ⚠️ **Do NOT use the pooler URL** (`*.pooler.supabase.com`) unless you know
+   > what you are doing. The pooler requires the username to be
+   > `postgres.PROJECT_REF` (not just `postgres`). Using the bare `postgres`
+   > username with the pooler causes:
+   > ```
+   > FATAL: password authentication failed for user "postgres"
+   > ```
+   > The direct connection URL above works out of the box.
 
 #### 2. Deploy on Render
 
@@ -112,6 +121,28 @@ Configure Nginx to proxy to port 8000 and handle SSL termination.
 | `HTTPS` | `false` | Set to `true` to enable `Secure` + `HttpOnly` session cookies (always set on Render) |
 | `ADMIN_USERNAME` | *(unset)* | If set together with `ADMIN_PASSWORD`, the app auto-creates this user on first boot |
 | `ADMIN_PASSWORD` | *(unset)* | Password for the auto-created admin user (remove after first deploy) |
+
+### Troubleshooting
+
+#### `FATAL: password authentication failed for user "postgres"`
+
+This error during a Render deploy almost always means the `DATABASE_URL` is set
+to a **Supabase Session/Transaction Mode pooler URL** with the wrong username.
+
+| URL type | Host | Correct username |
+|---|---|---|
+| Direct connection | `db.PROJECT_REF.supabase.co` | `postgres` |
+| Session/Transaction pooler | `*.pooler.supabase.com` | `postgres.PROJECT_REF` |
+
+**Quickest fix**: replace the pooler URL in `DATABASE_URL` with the **direct
+connection URI** from *Supabase → Project Settings → Database → URI*.
+
+If you want to keep the pooler URL, change the username from `postgres` to
+`postgres.YOUR_PROJECT_REF`.
+
+The app will now raise a `ValueError` at startup with an actionable message if
+it detects a pooler URL with the wrong username format, so the error will appear
+clearly in the Render deploy logs instead of as a cryptic password failure.
 
 ## Architecture
 

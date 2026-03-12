@@ -12,7 +12,19 @@ services:
       - key: HTTPS
         value: "true"
       - key: DATABASE_URL
-        # Set this to your Supabase / Postgres connection string in the Render dashboard.
-        # Example: postgresql://postgres:PASSWORD@db.XXXX.supabase.co:5432/postgres
+        # Set this to your Supabase Postgres connection string in the Render dashboard.
+        #
+        # ✅ RECOMMENDED — Supabase direct connection URI (Project Settings → Database → URI):
+        #   postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres
+        #
+        # ✅ ALSO SUPPORTED — Supabase Session/Transaction Mode pooler URL.
+        #   The username MUST be 'postgres.PROJECT_REF' (NOT just 'postgres').
+        #   Example pooler URL format:
+        #   postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+        #
+        # ⚠️  Using just 'postgres' (without .PROJECT_REF) as the pooler username causes:
+        #     "FATAL: password authentication failed for user postgres"
+        #   The app will now raise a clear ValueError at startup if this is misconfigured.
+        #
         # If left unset the app falls back to an ephemeral SQLite file (/tmp/aura.db).
         sync: false
