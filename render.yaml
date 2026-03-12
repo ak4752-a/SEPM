@@ -28,3 +28,15 @@ services:
         #
         # If left unset the app falls back to an ephemeral SQLite file (/tmp/aura.db).
         sync: false
+      - key: INIT_DB
+        # Controls whether db.create_all() and admin bootstrapping run at startup.
+        #
+        # Set to "true" for the FIRST deploy (or after schema changes) to create
+        # database tables and optionally seed an admin user.  After the first
+        # successful deploy, set back to "false" (or remove the variable) so that
+        # subsequent deploys start cleanly even if Postgres is temporarily
+        # unreachable — preventing crash-loops and "no open ports detected" errors.
+        #
+        # To seed an admin on first deploy, also set ADMIN_USERNAME and
+        # ADMIN_PASSWORD in the Render environment.
+        value: "false"

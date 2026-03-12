@@ -87,6 +87,7 @@ def test_production_cookie_security_without_https(monkeypatch):
 
 
 def test_admin_bootstrap_creates_user_with_salt(monkeypatch):
+    monkeypatch.setenv('INIT_DB', 'true')
     monkeypatch.setenv('ADMIN_USERNAME', 'bootstrapadmin')
     monkeypatch.setenv('ADMIN_PASSWORD', 'bootstrappass')
     from aura import create_app
@@ -104,6 +105,7 @@ def test_admin_bootstrap_creates_user_with_salt(monkeypatch):
 
 
 def test_admin_bootstrap_idempotent(monkeypatch):
+    monkeypatch.setenv('INIT_DB', 'true')
     monkeypatch.setenv('ADMIN_USERNAME', 'idempotentadmin')
     monkeypatch.setenv('ADMIN_PASSWORD', 'somepassword')
     from aura import create_app
