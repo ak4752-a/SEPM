@@ -77,8 +77,8 @@ FLASK_APP=run.py python -m pytest tests/ -v
    | Key | Value |
    |---|---|
    | `DATABASE_URL` | Your Supabase direct connection string (from step 1) |
-   | `ADMIN_USERNAME` | Your admin username (e.g. `Aditya`) |
-   | `ADMIN_PASSWORD` | Your admin password (e.g. `Aditya321`) |
+   | `ADMIN_USERNAME` | Your admin username (e.g. `XYZ`) |
+   | `ADMIN_PASSWORD` | Your admin password (e.g. `XYZ321`) |
 
    > `SECRET_KEY` and `HTTPS=true` are already set by `render.yaml`.
 
@@ -112,12 +112,6 @@ Configure Nginx to proxy to port 8000 and handle SSL termination.
 | `HTTPS` | `false` | Set to `true` to enable `Secure` + `HttpOnly` session cookies (always set on Render) |
 | `ADMIN_USERNAME` | *(unset)* | If set together with `ADMIN_PASSWORD`, the app auto-creates this user on first boot |
 | `ADMIN_PASSWORD` | *(unset)* | Password for the auto-created admin user (remove after first deploy) |
-
-### Security Notes
-
-- Set a strong random `SECRET_KEY` in production
-- Set `HTTPS=true` when running behind HTTPS to enable `Secure` cookies
-- Use PostgreSQL in production instead of SQLite for better concurrency
 
 ## Architecture
 
