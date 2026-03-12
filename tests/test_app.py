@@ -400,6 +400,65 @@ def test_money_format():
     assert format_amount(0.5, 'INR') == '₹0.50'
 
 
+def test_money_format_pdf():
+    """Test the PDF-safe money formatting helper uses ASCII currency codes, not symbols."""
+    from aura.utils.money import format_amount_pdf
+    result_inr = format_amount_pdf(1000.0, 'INR')
+    result_usd = format_amount_pdf(1000.0, 'USD')
+    # Must use ASCII currency codes, not Unicode symbols
+    assert 'INR' in result_inr
+    assert '\u20b9' not in result_inr  # no ₹ symbol
+    assert 'USD' in result_usd
+    assert result_inr == 'INR 1,000.00'
+    assert result_usd == 'USD 1,000.00'
+    # Verify result is ASCII-safe (no non-ASCII characters)
+    assert result_inr.isascii()
+    assert result_usd.isascii()
+
+
+def test_pdf_currency_codes_in_content(app, auth_client, user):
+    """Generated PDF uses currency codes (not Unicode symbols) to avoid glyph issues.
+
+    The key guarantee is validated via test_money_format_pdf (unit test).
+    This integration test confirms the PDF is generated without errors when
+    the formatter produces ASCII-safe strings.
+    """
+    from aura.models import Contract, Milestone
+    from aura.extensions import db as _db2
+    with app.app_context():
+        c = Contract(
+            user_id=user,
+            client_name='PDF Curr Client',
+            contract_name='PDF Curr Contract',
+            start_date=date(2024, 1, 1),
+            total_value=3000.0,
+            payment_term_days=30,
+            currency='INR',
+        )
+        _db2.session.add(c)
+        _db2.session.commit()
+        past = date.today() - timedelta(days=45)
+        m = Milestone(
+            contract_id=c.id,
+            name='Curr Milestone',
+            planned_delivery_date=past,
+            payment_amount=1500.0,
+            actual_delivery_date=past,
+            invoice_eligible=True,
+        )
+        _db2.session.add(m)
+        _db2.session.commit()
+        mid = m.id
+
+    response = auth_client.get(f'/milestones/{mid}/pdf')
+    assert response.status_code == 200
+    assert response.data[:4] == b'%PDF'
+    # PDF content stream is compressed (FlateDecode); we cannot search raw bytes for text.
+    # The absence of the raw UTF-8 rupee bytes (0xE2 0x82 0xB9) confirms the symbol was
+    # not embedded as uncompressed literal text anywhere in the PDF structure.
+    assert '\u20b9'.encode('utf-8') not in response.data
+
+
 def test_deliver_with_past_date(app, auth_client, contract):
     """Delivering a milestone with a past date (but >= contract start) persists correctly."""
     with app.app_context():
