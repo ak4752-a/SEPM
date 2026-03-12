@@ -67,6 +67,25 @@ def test_app_creates(app):
     assert app is not None
 
 
+def test_production_cookie_security_with_https(monkeypatch):
+    """ProductionConfig sets SESSION_COOKIE_SECURE when HTTPS=true."""
+    monkeypatch.setenv('HTTPS', 'true')
+    from aura import create_app
+    prod_app = create_app('production')
+    assert prod_app.config['SESSION_COOKIE_SECURE'] is True
+    assert prod_app.config['SESSION_COOKIE_HTTPONLY'] is True
+    assert prod_app.config['SESSION_COOKIE_SAMESITE'] == 'Lax'
+
+
+def test_production_cookie_security_without_https(monkeypatch):
+    """ProductionConfig leaves SESSION_COOKIE_SECURE False when HTTPS is not set."""
+    monkeypatch.delenv('HTTPS', raising=False)
+    from aura import create_app
+    prod_app = create_app('production')
+    assert prod_app.config['SESSION_COOKIE_SECURE'] is False
+    assert prod_app.config['SESSION_COOKIE_HTTPONLY'] is True
+
+
 def test_admin_bootstrap_creates_user_with_salt(monkeypatch):
     monkeypatch.setenv('ADMIN_USERNAME', 'bootstrapadmin')
     monkeypatch.setenv('ADMIN_PASSWORD', 'bootstrappass')

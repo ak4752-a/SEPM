@@ -13,6 +13,12 @@ def create_app(config_name='default'):
 
     app.config.from_object(config_map[config_name])
 
+    # Enable Secure cookies at runtime if the HTTPS env var is set to "true".
+    # This allows the config class to remain static while the setting is resolved
+    # after the process env is fully populated (important for Render deployments).
+    if os.environ.get('HTTPS', '').lower() == 'true':
+        app.config['SESSION_COOKIE_SECURE'] = True
+
     db.init_app(app)
 
     from .blueprints.auth import auth_bp

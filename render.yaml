@@ -9,8 +9,10 @@ services:
         value: production
       - key: SECRET_KEY
         generateValue: true
+      - key: HTTPS
+        value: "true"
       - key: DATABASE_URL
         # Set this to your Supabase / Postgres connection string in the Render dashboard.
-        # Example: postgresql://USER:PASSWORD@HOST:PORT/DBNAME
+        # Example: postgresql://postgres:PASSWORD@db.XXXX.supabase.co:5432/postgres
         # If left unset the app falls back to an ephemeral SQLite file (/tmp/aura.db).
         sync: false
