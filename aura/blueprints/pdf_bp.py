@@ -7,7 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from ..models import Milestone, Contract
-from ..utils.money import format_amount
+from ..utils.money import format_amount_pdf as format_amount
 from .auth import login_required
 
 pdf_bp = Blueprint('pdf', __name__)
