@@ -59,23 +59,14 @@ FLASK_APP=run.py python -m pytest tests/ -v
 
 ## Production Deployment
 
-### Deploying to Render + Supabase Postgres
+### Deploying to Render + Supabase
 
 #### 1. Create a Supabase project
 
 1. Sign in at [supabase.com](https://supabase.com) and create a new project.
 2. In the Supabase dashboard, go to **Project Settings → Database**.
-3. Under **Connection string**, copy the **URI** (direct connection).  
+3. Under **Connection string**, copy the **URI**.  
    It looks like: `postgresql://postgres:PASSWORD@db.XXXX.supabase.co:5432/postgres`
-
-   > ⚠️ **Do NOT use the pooler URL** (`*.pooler.supabase.com`) unless you know
-   > what you are doing. The pooler requires the username to be
-   > `postgres.PROJECT_REF` (not just `postgres`). Using the bare `postgres`
-   > username with the pooler causes:
-   > ```
-   > FATAL: password authentication failed for user "postgres"
-   > ```
-   > The direct connection URL above works out of the box.
 
 #### 2. Deploy on Render
 
@@ -85,64 +76,27 @@ FLASK_APP=run.py python -m pytest tests/ -v
 
    | Key | Value |
    |---|---|
-   | `DATABASE_URL` | Your Supabase direct connection string (from step 1) |
-   | `ADMIN_USERNAME` | Your admin username (e.g. `XYZ`) |
-   | `ADMIN_PASSWORD` | Your admin password (e.g. `XYZ321`) |
+   | `DATABASE_URL` | Your Supabase connection string (from step 1) |
+   | `ADMIN_USERNAME` | Your admin username |
+   | `ADMIN_PASSWORD` | Your admin password |
 
    > `SECRET_KEY` and `HTTPS=true` are already set by `render.yaml`.
 
 4. Click **Deploy**. On the first boot, the app will:
-   - Create all database tables automatically (`db.create_all()`).
+   - Create all database tables automatically.
    - Create the admin user from `ADMIN_USERNAME` / `ADMIN_PASSWORD` if it doesn't exist yet.
 5. Open the deployed URL and log in with your admin credentials.
-6. Redeploy once more (or create a contract + milestone) and confirm data persists across deploys — this proves Postgres is in use rather than the ephemeral SQLite fallback.
-
-#### 3. Post-deploy hardening (recommended)
-
-- After first login, **remove** the `ADMIN_PASSWORD` environment variable in Render to disable auto-bootstrap on subsequent deploys.
-- Rotate the `SECRET_KEY` and `DATABASE_URL` password if they were ever exposed.
-
-### Using Gunicorn + Nginx
-
-```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:8000 "run:app"
-```
-
-Configure Nginx to proxy to port 8000 and handle SSL termination.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `SECRET_KEY` | `dev-secret-key` | Flask session secret — **change in production** |
-| `DATABASE_URL` | `sqlite:////tmp/aura.db` | SQLAlchemy database URI. Set to Supabase Postgres URL in production. |
+| `DATABASE_URL` | `sqlite:////tmp/aura.db` | SQLAlchemy database URI (set to Supabase URL in production) |
 | `FLASK_ENV` | `default` (production) | `development` or `production` |
 | `HTTPS` | `false` | Set to `true` to enable `Secure` + `HttpOnly` session cookies (always set on Render) |
 | `ADMIN_USERNAME` | *(unset)* | If set together with `ADMIN_PASSWORD`, the app auto-creates this user on first boot |
-| `ADMIN_PASSWORD` | *(unset)* | Password for the auto-created admin user (remove after first deploy) |
-
-### Troubleshooting
-
-#### `FATAL: password authentication failed for user "postgres"`
-
-This error during a Render deploy almost always means the `DATABASE_URL` is set
-to a **Supabase Session/Transaction Mode pooler URL** with the wrong username.
-
-| URL type | Host | Correct username |
-|---|---|---|
-| Direct connection | `db.PROJECT_REF.supabase.co` | `postgres` |
-| Session/Transaction pooler | `*.pooler.supabase.com` | `postgres.PROJECT_REF` |
-
-**Quickest fix**: replace the pooler URL in `DATABASE_URL` with the **direct
-connection URI** from *Supabase → Project Settings → Database → URI*.
-
-If you want to keep the pooler URL, change the username from `postgres` to
-`postgres.YOUR_PROJECT_REF`.
-
-The app will now raise a `ValueError` at startup with an actionable message if
-it detects a pooler URL with the wrong username format, so the error will appear
-clearly in the Render deploy logs instead of as a cryptic password failure.
+| `ADMIN_PASSWORD` | *(unset)* | Password for the auto-created admin user |
 
 ## Architecture
 
