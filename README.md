@@ -15,7 +15,7 @@ AURA is a self hosted Flask web application for freelancers and small agencies t
 - **Payment Recording** — Record when payments are received
 - **Dashboard** — Summary cards with total received, pending, and overdue amounts
 - **PDF Reminders** — Generate professional payment reminder PDFs per milestone (Normal, Overdue, Penalty modes)
-- **Single-user** — authentication — Secure SHA-256 password hashing with per-user salt.
+- **Single-user** — authentication — Secure SHA-256 password hashing with per user salt.
 ## Setup
 
 ### Prerequisites
