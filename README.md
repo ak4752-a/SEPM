@@ -9,7 +9,7 @@ AURA is a self hosted Flask web application for freelancers and small agencies t
 
 - **Contract Management** — Create, edit, and delete client contracts with payment terms
 - **Milestone Tracking** — Break contracts into milestones with planned delivery dates and payment amounts
-- **Invoice Eligibility** — Automatically mark milestones invoice-eligible when delivered
+- **Invoice Eligibility** — Automatically mark milestones invoice eligible when delivered
 - **Delivery Date** — Record actual delivery with any date (including past dates); defaults to today for convenience
 - **Overdue Detection** — Automatically highlights overdue payments based on delivery date + payment terms
 - **Payment Recording** — Record when payments are received
